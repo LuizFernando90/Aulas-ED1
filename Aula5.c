@@ -6,7 +6,6 @@ int main()
     // Variável de pontuação
     int pontuacao = 0;
 
-    // Ponteiro para inteiro
     int *ponteiro_pontuacao;
 
     // Conectando o ponteiro ao endereço da pontuação
@@ -15,7 +14,7 @@ int main()
     // Pontuação inicial
     printf("Pontuacao inicial: %d\n", pontuacao);
 
-    // Simulando a coleta de 3 moedas (cada uma vale 10 pontos)
+    // Simulando a coleta de 3 moedas 
     for (int i = 0; i < 3; i++)
     {
         *ponteiro_pontuacao = *ponteiro_pontuacao + 10;
