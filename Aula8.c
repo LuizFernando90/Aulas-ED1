@@ -6,7 +6,6 @@ int main()
     // Vetor representando a fase
     int fase[10] = {0, 1, 0, 0, 1, 1, 0, 1, 0, 0};
 
-    // Ponteiro para inteiro (jogador)
     int *ponteiro_jogador;
 
     // Contador de moedas

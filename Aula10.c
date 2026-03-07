@@ -8,7 +8,6 @@ int main()
     int sala_2[] = {50, 100};
     int sala_3[] = {5, 5, 5, 10};
 
-    // Vetor de ponteiros (gerenciador de salas)
     int *ponteiro_salas[3];
 
     // Conectando os ponteiros aos vetores
