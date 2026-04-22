@@ -1,0 +1,3 @@
+Jogador_encontrou_item_raro
+Monstro_Elite_derrotado
+Portal_descoberto
