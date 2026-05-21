@@ -191,7 +191,6 @@ int main()
     }
     else
     {
-        // Corta 80 pixels da direita e 50 pixels de baixo (remove marca d'água)
         int larg_original = al_get_bitmap_width(background);
         int alt_original = al_get_bitmap_height(background);
         int larg_corte = larg_original - 80;
@@ -199,7 +198,12 @@ int main()
 
         if (larg_corte > 0 && alt_corte > 0)
         {
-            ALLEGRO_BITMAP *background_cortado = al_create_sub_bitmap(background, 0, 0, larg_corte, alt_corte);
+            // Cria um bitmap novo com o tamanho cortado
+            ALLEGRO_BITMAP *background_cortado = al_create_bitmap(larg_corte, alt_corte);
+            al_set_target_bitmap(background_cortado);
+            // Copia a região do original para o novo bitmap
+            al_draw_bitmap_region(background, 0, 0, larg_corte, alt_corte, 0, 0, 0);
+            al_set_target_backbuffer(display);
             al_destroy_bitmap(background);
             background = background_cortado;
         }
