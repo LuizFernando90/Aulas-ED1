@@ -186,28 +186,53 @@ int main()
     // Background (certifique-se de que a imagem está em Imagens/background.png)
     ALLEGRO_BITMAP *background = al_load_bitmap("Imagens/background.png");
     if (!background)
-        printf("Aviso: Imagens/background.png não encontrado\n");
+    {
+        printf("Aviso: Imagens/background.png não encontrado. Usando fundo preto.\n");
+    }
+    else
+    {
+        // Corta 80 pixels da direita e 50 pixels de baixo (remove marca d'água)
+        int larg_original = al_get_bitmap_width(background);
+        int alt_original = al_get_bitmap_height(background);
+        int larg_corte = larg_original - 80;
+        int alt_corte = alt_original - 50;
+
+        if (larg_corte > 0 && alt_corte > 0)
+        {
+            ALLEGRO_BITMAP *background_cortado = al_create_sub_bitmap(background, 0, 0, larg_corte, alt_corte);
+            al_destroy_bitmap(background);
+            background = background_cortado;
+        }
+        else
+        {
+            printf("Aviso: Dimensões da imagem muito pequenas para cortar.\n");
+        }
+    }
 
     // Player (10 frames: Knight_01_WALK_001.png a 010.png)
     ALLEGRO_BITMAP *player[TOTAL_FRAMES_PLAYER];
     char nome_arquivo[100];
+
     for (int i = 0; i < TOTAL_FRAMES_PLAYER; i++)
     {
-        sprintf(nome_arquivo, "Imagens/Knight_01_WALK_00%d.png", i + 1);
+        sprintf(nome_arquivo, "Imagens/Knight_01_WALK_%03d.png", i + 1);
         ALLEGRO_BITMAP *orig = al_load_bitmap(nome_arquivo);
+
         if (!orig)
         {
             printf("Erro ao carregar %s\n", nome_arquivo);
             player[i] = NULL;
             continue;
         }
-        // Redimensiona para 64x64 (evita problemas de escala)
+
+        // Cria um bitmap redimensionado para 64x64
         player[i] = al_create_bitmap(64, 64);
         al_set_target_bitmap(player[i]);
-        al_draw_scaled_bitmap(orig, 0, 0, al_get_bitmap_width(orig), al_get_bitmap_height(orig),
+        al_draw_scaled_bitmap(orig, 0, 0,
+                              al_get_bitmap_width(orig), al_get_bitmap_height(orig),
                               0, 0, 64, 64, 0);
-        al_set_target_backbuffer(display);
-        al_destroy_bitmap(orig);
+        al_set_target_backbuffer(display); // volta a desenhar na tela
+        al_destroy_bitmap(orig);           // libera o original
     }
 
     // Moeda (10 frames: Gold_21.png a 30.png)
@@ -235,7 +260,7 @@ int main()
     ALLEGRO_BITMAP *inimigo_frames[TOTAL_FRAMES_INIMIGO];
     for (int i = 0; i < TOTAL_FRAMES_INIMIGO; i++)
     {
-        sprintf(nome_arquivo, "Imagens/Golem_01_Walking_00%d.png", i + 1);
+        sprintf(nome_arquivo, "Imagens/Golem_01_Walking_%03d.png", i + 1);
         ALLEGRO_BITMAP *orig = al_load_bitmap(nome_arquivo);
         if (!orig)
         {
