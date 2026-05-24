@@ -219,7 +219,7 @@ int main()
 
     for (int i = 0; i < TOTAL_FRAMES_PLAYER; i++)
     {
-        sprintf(nome_arquivo, "Imagens/Knight_01_WALK_%03d.png", i + 1);
+        sprintf(nome_arquivo, "Imagens/Knight__01_WALK_%03d.png", i + 1);
         ALLEGRO_BITMAP *orig = al_load_bitmap(nome_arquivo);
 
         if (!orig)
