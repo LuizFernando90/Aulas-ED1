@@ -17,7 +17,7 @@
 
 #define TOTAL_FRAMES_PLAYER 10
 #define TOTAL_FRAMES_MOEDA 10
-#define TOTAL_FRAMES_INIMIGO 8 // <-- ajuste conforme seus frames do golem
+#define TOTAL_FRAMES_INIMIGO 8 // <-- ajustar o frames do golem
 
 #define VELOCIDADE 5
 
