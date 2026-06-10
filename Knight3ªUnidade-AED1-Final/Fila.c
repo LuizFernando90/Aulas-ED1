@@ -53,9 +53,7 @@ PowerUp removerPowerUp(Fila *f)
     f->inicio = aux->prox;
 
     if (f->inicio == NULL)
-    {
         f->fim = NULL;
-    }
 
     free(aux);
     f->tamanho--;
@@ -76,9 +74,7 @@ PowerUp verInicio(Fila *f)
     erro.valor = 0;
 
     if (estaVazia(f))
-    {
         return erro;
-    }
     return f->inicio->dado;
 }
 
@@ -137,9 +133,7 @@ void carregarFila(Fila *f, const char *nomeArquivo)
 
     PowerUp p;
     while (fread(&p, sizeof(PowerUp), 1, arquivo) == 1)
-    {
         inserirPowerUp(f, p);
-    }
 
     fclose(arquivo);
     printf("Fila carregada com sucesso de %s\n", nomeArquivo);
@@ -148,7 +142,5 @@ void carregarFila(Fila *f, const char *nomeArquivo)
 void liberarFila(Fila *f)
 {
     while (!estaVazia(f))
-    {
         removerPowerUp(f);
-    }
 }

@@ -9,7 +9,7 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
 
-#include "Fila.h" // Inclui a fila de power-ups
+#include "Fila.h" // *** FILA: incluindo o TAD Fila ***
 
 #define LARGURA 1280
 #define ALTURA 720
@@ -22,6 +22,9 @@
 #define TOTAL_FRAMES_INIMIGO 8
 
 #define VELOCIDADE 5
+#define TAM_JOGADOR 128
+#define TAM_INIMIGO 64
+#define TAM_MOEDA 32
 
 // ========================= STRUCTS =========================
 
@@ -108,12 +111,12 @@ void mover_jogador(Jogador *j, int dx, int dy)
 
     if (j->pos.x < 0)
         j->pos.x = 0;
-    if (j->pos.x > LARGURA - 64)
-        j->pos.x = LARGURA - 64;
+    if (j->pos.x > LARGURA - TAM_JOGADOR)
+        j->pos.x = LARGURA - TAM_JOGADOR;
     if (j->pos.y < 0)
         j->pos.y = 0;
-    if (j->pos.y > ALTURA - 64)
-        j->pos.y = ALTURA - 64;
+    if (j->pos.y > ALTURA - TAM_JOGADOR)
+        j->pos.y = ALTURA - TAM_JOGADOR;
 }
 
 int colisao_moeda(Jogador *j, Moeda *m)
@@ -121,20 +124,20 @@ int colisao_moeda(Jogador *j, Moeda *m)
     if (!m->ativa)
         return 0;
 
-    int je = j->pos.x, jd = j->pos.x + 64;
-    int jc = j->pos.y, jb = j->pos.y + 64;
-    int me = m->pos.x, md = m->pos.x + 32;
-    int mc = m->pos.y, mb = m->pos.y + 32;
+    int je = j->pos.x, jd = j->pos.x + TAM_JOGADOR;
+    int jc = j->pos.y, jb = j->pos.y + TAM_JOGADOR;
+    int me = m->pos.x, md = m->pos.x + TAM_MOEDA;
+    int mc = m->pos.y, mb = m->pos.y + TAM_MOEDA;
 
     return (jd > me && je < md && jb > mc && jc < mb);
 }
 
 int colisao_inimigo(Jogador *j, Inimigo *inim)
 {
-    int je = j->pos.x, jd = j->pos.x + 64;
-    int jc = j->pos.y, jb = j->pos.y + 64;
-    int ie = inim->pos.x, id = inim->pos.x + 64;
-    int ic = inim->pos.y, ib = inim->pos.y + 64;
+    int je = j->pos.x, jd = j->pos.x + TAM_JOGADOR;
+    int jc = j->pos.y, jb = j->pos.y + TAM_JOGADOR;
+    int ie = inim->pos.x, id = inim->pos.x + TAM_INIMIGO;
+    int ic = inim->pos.y, ib = inim->pos.y + TAM_INIMIGO;
 
     return (jd > ie && je < id && jb > ic && jc < ib);
 }
@@ -162,25 +165,24 @@ int main()
     }
 
     // Eventos e timer
-    ALLEGRO_EVENT_QUEUE *fila_eventos = al_create_event_queue();
+    ALLEGRO_EVENT_QUEUE *fila = al_create_event_queue();
     ALLEGRO_TIMER *timer = al_create_timer(1.0 / 60.0);
-    al_register_event_source(fila_eventos, al_get_keyboard_event_source());
-    al_register_event_source(fila_eventos, al_get_display_event_source(display));
-    al_register_event_source(fila_eventos, al_get_timer_event_source(timer));
+    al_register_event_source(fila, al_get_keyboard_event_source());
+    al_register_event_source(fila, al_get_display_event_source(display));
+    al_register_event_source(fila, al_get_timer_event_source(timer));
 
-    // Fonte (tenta carregar, se não, usa built-in)
+    // Fonte
     ALLEGRO_FONT *fonte = al_load_ttf_font("arial.ttf", 24, 0);
     if (!fonte)
-        fonte = al_create_builtin_font();
+    {
+        printf("Erro ao carregar arial.ttf\n");
+        return 1;
+    }
 
     // ======================== CARREGAR IMAGENS ========================
-
-    // Background com corte de marca d'água
     ALLEGRO_BITMAP *background = al_load_bitmap("Imagens/background.png");
     if (!background)
-    {
         printf("Aviso: Imagens/background.png não encontrado. Usando fundo preto.\n");
-    }
     else
     {
         int larg_original = al_get_bitmap_width(background);
@@ -198,17 +200,15 @@ int main()
             background = background_cortado;
         }
         else
-        {
             printf("Aviso: Dimensões da imagem muito pequenas para cortar.\n");
-        }
     }
 
-    // Player (10 frames)
+    // Player (frames com dois underscores, i começando em 0)
     ALLEGRO_BITMAP *player[TOTAL_FRAMES_PLAYER];
     char nome_arquivo[100];
     for (int i = 0; i < TOTAL_FRAMES_PLAYER; i++)
     {
-        sprintf(nome_arquivo, "Imagens/Knight__01_WALK_%03d.png", i + 1);
+        sprintf(nome_arquivo, "Imagens/Knight_01__WALK_%03d.png", i);
         ALLEGRO_BITMAP *orig = al_load_bitmap(nome_arquivo);
         if (!orig)
         {
@@ -216,16 +216,15 @@ int main()
             player[i] = NULL;
             continue;
         }
-        player[i] = al_create_bitmap(64, 64);
+        player[i] = al_create_bitmap(TAM_JOGADOR, TAM_JOGADOR);
         al_set_target_bitmap(player[i]);
-        al_draw_scaled_bitmap(orig, 0, 0,
-                              al_get_bitmap_width(orig), al_get_bitmap_height(orig),
-                              0, 0, 64, 64, 0);
+        al_draw_scaled_bitmap(orig, 0, 0, al_get_bitmap_width(orig), al_get_bitmap_height(orig),
+                              0, 0, TAM_JOGADOR, TAM_JOGADOR, 0);
         al_set_target_backbuffer(display);
         al_destroy_bitmap(orig);
     }
 
-    // Moeda (10 frames)
+    // Moeda
     ALLEGRO_BITMAP *coin[TOTAL_FRAMES_MOEDA];
     for (int i = 0; i < TOTAL_FRAMES_MOEDA; i++)
     {
@@ -237,15 +236,15 @@ int main()
             coin[i] = NULL;
             continue;
         }
-        coin[i] = al_create_bitmap(32, 32);
+        coin[i] = al_create_bitmap(TAM_MOEDA, TAM_MOEDA);
         al_set_target_bitmap(coin[i]);
         al_draw_scaled_bitmap(orig, 0, 0, al_get_bitmap_width(orig), al_get_bitmap_height(orig),
-                              0, 0, 32, 32, 0);
+                              0, 0, TAM_MOEDA, TAM_MOEDA, 0);
         al_set_target_backbuffer(display);
         al_destroy_bitmap(orig);
     }
 
-    // Inimigo (8 frames)
+    // Inimigo
     ALLEGRO_BITMAP *inimigo_frames[TOTAL_FRAMES_INIMIGO];
     for (int i = 0; i < TOTAL_FRAMES_INIMIGO; i++)
     {
@@ -257,46 +256,45 @@ int main()
             inimigo_frames[i] = NULL;
             continue;
         }
-        inimigo_frames[i] = al_create_bitmap(64, 64);
+        inimigo_frames[i] = al_create_bitmap(TAM_INIMIGO, TAM_INIMIGO);
         al_set_target_bitmap(inimigo_frames[i]);
         al_draw_scaled_bitmap(orig, 0, 0, al_get_bitmap_width(orig), al_get_bitmap_height(orig),
-                              0, 0, 64, 64, 0);
+                              0, 0, TAM_INIMIGO, TAM_INIMIGO, 0);
         al_set_target_backbuffer(display);
         al_destroy_bitmap(orig);
     }
 
-    // Power-up (imagem estática)
+    // *** FILA: carregar imagem do power-up (opcional) ***
     ALLEGRO_BITMAP *powerup_img = al_load_bitmap("Imagens/powerup.png");
     if (!powerup_img)
     {
-        powerup_img = al_create_bitmap(32, 32); // fallback
+        powerup_img = al_create_bitmap(32, 32);
         al_set_target_bitmap(powerup_img);
-        al_clear_to_color(al_map_rgb(255, 0, 255)); // rosa para debug
+        al_clear_to_color(al_map_rgb(255, 0, 255)); // magenta fallback
         al_set_target_backbuffer(display);
     }
 
     // ======================== INICIALIZA ENTIDADES ========================
-
     Jogador jogador;
     strcpy(jogador.nome, "Player");
     jogador.pontuacao = 0;
-    jogador.pos.x = LARGURA / 2;
+    jogador.pos.x = LARGURA / 2 - TAM_JOGADOR / 2;
     jogador.pos.y = ALTURA - 120;
 
     Moeda moedas[MAX_MOEDAS];
     for (int i = 0; i < MAX_MOEDAS; i++)
     {
-        moedas[i].pos.x = rand() % (LARGURA - 100);
-        moedas[i].pos.y = rand() % (ALTURA - 100);
+        moedas[i].pos.x = rand() % (LARGURA - TAM_MOEDA);
+        moedas[i].pos.y = rand() % (ALTURA - TAM_MOEDA);
         moedas[i].ativa = 1;
     }
 
     Inimigo inimigos[MAX_INIMIGOS];
     for (int i = 0; i < MAX_INIMIGOS; i++)
     {
-        inimigos[i].pos.x = rand() % LARGURA;
-        inimigos[i].pos.y = rand() % 200;
-        inimigos[i].velocidade = 2 + rand() % 3;
+        inimigos[i].pos.x = rand() % (LARGURA - TAM_INIMIGO);
+        inimigos[i].pos.y = rand() % (ALTURA - TAM_INIMIGO);
+        inimigos[i].velocidade = 1 + rand() % 2;
         inimigos[i].frame_atual = 0;
         inimigos[i].contador_anim = 0;
     }
@@ -307,19 +305,19 @@ int main()
     // ======================== FILA DE POWER-UPS ========================
     Fila fila_powerups;
     inicializarFila(&fila_powerups);
-    carregarFila(&fila_powerups, "powerups.bin");
+    carregarFila(&fila_powerups, "powerups.bin"); // carrega fila salva anteriormente
 
-    // Controles
-    int teclas[4] = {0}; // A, D, W, S
-    int rodando = 1;
-    int frame_player = 0, frame_coin = 0, contador_animacao = 0;
-
-    // Power-up: posição flutuante na tela
+    // Power-up flutuante na tela
     Posicao pos_powerup;
     pos_powerup.x = rand() % (LARGURA - 64);
     pos_powerup.y = rand() % (ALTURA - 64);
     int powerup_ativo = 1;
-    int contador_coletas = 0; // a cada 3 moedas, gera um power-up
+    int contador_coletas = 0; // a cada 3 moedas, insere power-up na fila
+
+    // Controles
+    int teclas[4] = {0};
+    int rodando = 1;
+    int frame_player = 0, frame_coin = 0, contador_animacao = 0;
 
     al_start_timer(timer);
 
@@ -327,11 +325,10 @@ int main()
     while (rodando)
     {
         ALLEGRO_EVENT ev;
-        al_wait_for_event(fila_eventos, &ev);
+        al_wait_for_event(fila, &ev);
 
         if (ev.type == ALLEGRO_EVENT_TIMER)
         {
-            // Movimento do jogador
             int dx = 0, dy = 0;
             if (teclas[0])
                 dx -= VELOCIDADE;
@@ -343,7 +340,7 @@ int main()
                 dy += VELOCIDADE;
             mover_jogador(&jogador, dx, dy);
 
-            // Colisão com moedas
+            // Colisão com moedas + geração de power-up na fila
             for (int i = 0; i < MAX_MOEDAS; i++)
             {
                 if (colisao_moeda(&jogador, &moedas[i]))
@@ -352,7 +349,7 @@ int main()
                     jogador.pontuacao += 10;
                     contador_coletas++;
 
-                    // A cada 3 moedas coletadas, gera um power-up na fila
+                    // *** FILA: a cada 3 moedas, insere um power-up na fila ***
                     if (contador_coletas >= 3)
                     {
                         contador_coletas = 0;
@@ -364,17 +361,17 @@ int main()
                         printf("Power-up adicionado à fila!\n");
                     }
 
-                    moedas[i].pos.x = rand() % (LARGURA - 100);
-                    moedas[i].pos.y = rand() % (ALTURA - 100);
+                    moedas[i].pos.x = rand() % (LARGURA - TAM_MOEDA);
+                    moedas[i].pos.y = rand() % (ALTURA - TAM_MOEDA);
                     moedas[i].ativa = 1;
                 }
             }
 
-            // Colisão com power-up na tela
+            // *** FILA: coletar power-up flutuante na tela ***
             if (powerup_ativo)
             {
-                int je = jogador.pos.x, jd = jogador.pos.x + 64;
-                int jc = jogador.pos.y, jb = jogador.pos.y + 64;
+                int je = jogador.pos.x, jd = jogador.pos.x + TAM_JOGADOR;
+                int jc = jogador.pos.y, jb = jogador.pos.y + TAM_JOGADOR;
                 int pe = pos_powerup.x, pd = pos_powerup.x + 32;
                 int pc = pos_powerup.y, pb = pos_powerup.y + 32;
 
@@ -382,7 +379,7 @@ int main()
                 {
                     powerup_ativo = 0;
                     PowerUp novo;
-                    novo.id = 1;
+                    novo.id = 2;
                     strcpy(novo.nome, "Power-Up Coletado");
                     novo.valor = 20;
                     inserirPowerUp(&fila_powerups, novo);
@@ -390,15 +387,37 @@ int main()
                 }
             }
 
-            // Movimento e colisão dos inimigos
+            // Movimento dos inimigos (perseguição)
             for (int i = 0; i < MAX_INIMIGOS; i++)
             {
-                inimigos[i].pos.y += inimigos[i].velocidade;
-                if (inimigos[i].pos.y > ALTURA)
+                int dx_inim = 0, dy_inim = 0;
+                if (inimigos[i].pos.x < jogador.pos.x)
+                    dx_inim = 1;
+                else if (inimigos[i].pos.x > jogador.pos.x)
+                    dx_inim = -1;
+
+                if (inimigos[i].pos.y < jogador.pos.y)
+                    dy_inim = 1;
+                else if (inimigos[i].pos.y > jogador.pos.y)
+                    dy_inim = -1;
+
+                if (rand() % 5 == 0)
                 {
-                    inimigos[i].pos.y = -50;
-                    inimigos[i].pos.x = rand() % LARGURA;
+                    dx_inim += (rand() % 3) - 1;
+                    dy_inim += (rand() % 3) - 1;
                 }
+
+                inimigos[i].pos.x += dx_inim * inimigos[i].velocidade;
+                inimigos[i].pos.y += dy_inim * inimigos[i].velocidade;
+
+                if (inimigos[i].pos.x < 0)
+                    inimigos[i].pos.x = 0;
+                if (inimigos[i].pos.x > LARGURA - TAM_INIMIGO)
+                    inimigos[i].pos.x = LARGURA - TAM_INIMIGO;
+                if (inimigos[i].pos.y < 0)
+                    inimigos[i].pos.y = 0;
+                if (inimigos[i].pos.y > ALTURA - TAM_INIMIGO)
+                    inimigos[i].pos.y = ALTURA - TAM_INIMIGO;
 
                 inimigos[i].contador_anim++;
                 if (inimigos[i].contador_anim >= 10)
@@ -412,8 +431,8 @@ int main()
                     jogador.pontuacao -= 5;
                     if (jogador.pontuacao < 0)
                         jogador.pontuacao = 0;
-                    inimigos[i].pos.y = -50;
-                    inimigos[i].pos.x = rand() % LARGURA;
+                    inimigos[i].pos.x = rand() % (LARGURA - TAM_INIMIGO);
+                    inimigos[i].pos.y = rand() % (ALTURA - TAM_INIMIGO);
                 }
             }
 
@@ -435,32 +454,28 @@ int main()
                                       al_get_bitmap_height(background),
                                       0, 0, LARGURA, ALTURA, 0);
 
-            // Moedas
             for (int i = 0; i < MAX_MOEDAS; i++)
                 if (moedas[i].ativa && coin[frame_coin])
                     al_draw_bitmap(coin[frame_coin], moedas[i].pos.x, moedas[i].pos.y, 0);
 
-            // Power-up na tela
+            // Desenha power-up flutuante
             if (powerup_ativo && powerup_img)
                 al_draw_bitmap(powerup_img, pos_powerup.x, pos_powerup.y, 0);
 
-            // Inimigos
             for (int i = 0; i < MAX_INIMIGOS; i++)
                 if (inimigo_frames[inimigos[i].frame_atual])
                     al_draw_bitmap(inimigo_frames[inimigos[i].frame_atual],
                                    inimigos[i].pos.x, inimigos[i].pos.y, 0);
 
-            // Jogador
             if (player[frame_player])
                 al_draw_bitmap(player[frame_player], jogador.pos.x, jogador.pos.y, 0);
 
-            // HUD
+            // HUD com informação da fila
             al_draw_textf(fonte, al_map_rgb(255, 255, 255), 20, 20, 0, "Pontuacao: %d", jogador.pontuacao);
             al_draw_textf(fonte, al_map_rgb(0, 255, 0), 20, 60, 0, "Power-ups na fila: %d", tamanhoFila(&fila_powerups));
             al_draw_text(fonte, al_map_rgb(255, 255, 0), 20, 100, 0, "WASD para mover | E para usar power-up");
             al_draw_text(fonte, al_map_rgb(255, 0, 0), 20, 140, 0, "ESC para sair");
 
-            // Leaderboard
             al_draw_filled_rectangle(LARGURA - 320, 20, LARGURA - 20, 320, al_map_rgba(0, 0, 0, 180));
             al_draw_text(fonte, al_map_rgb(255, 215, 0), LARGURA - 250, 30, 0, "LEADERBOARD");
             al_draw_textf(fonte, al_map_rgb(255, 255, 255), LARGURA - 280, 80, 0, "Atual: %d", jogador.pontuacao);
@@ -471,7 +486,7 @@ int main()
             al_flip_display();
         }
 
-        // Teclas pressionadas
+        // Teclas
         if (ev.type == ALLEGRO_EVENT_KEY_DOWN)
         {
             if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
@@ -484,6 +499,7 @@ int main()
                 teclas[2] = 1;
             if (ev.keyboard.keycode == ALLEGRO_KEY_S)
                 teclas[3] = 1;
+            // *** FILA: tecla E para usar power-up ***
             if (ev.keyboard.keycode == ALLEGRO_KEY_E && !estaVazia(&fila_powerups))
             {
                 PowerUp p = removerPowerUp(&fila_powerups);
@@ -491,7 +507,6 @@ int main()
                 printf("Power-up usado: %s! +%d pontos!\n", p.nome, p.valor);
             }
         }
-
         if (ev.type == ALLEGRO_EVENT_KEY_UP)
         {
             if (ev.keyboard.keycode == ALLEGRO_KEY_A)
@@ -503,14 +518,13 @@ int main()
             if (ev.keyboard.keycode == ALLEGRO_KEY_S)
                 teclas[3] = 0;
         }
-
         if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
             rodando = 0;
     }
 
-    // Salvar pontuação e fila
+    // Salvar pontuação e fila antes de sair
     salvar_score(jogador.nome, jogador.pontuacao);
-    salvarFila(&fila_powerups, "powerups.bin");
+    salvarFila(&fila_powerups, "powerups.bin"); // *** FILA: salva estado atual ***
 
     // Liberar memória
     for (int i = 0; i < TOTAL_FRAMES_PLAYER; i++)
@@ -526,13 +540,12 @@ int main()
         al_destroy_bitmap(background);
     if (powerup_img)
         al_destroy_bitmap(powerup_img);
-
     al_destroy_font(fonte);
     al_destroy_timer(timer);
-    al_destroy_event_queue(fila_eventos);
+    al_destroy_event_queue(fila);
     al_destroy_display(display);
 
-    liberarFila(&fila_powerups);
+    liberarFila(&fila_powerups); // libera nós restantes
 
     return 0;
 }

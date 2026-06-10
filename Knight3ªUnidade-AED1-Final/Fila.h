@@ -4,9 +4,9 @@
 // Estrutura para itens da fila (power-ups)
 typedef struct
 {
-    int id;        // tipo do power-up: 1 = moeda extra, 2 = congelar inimigos, etc.
-    char nome[50]; // nome do power-up
-    int valor;     // valor em pontos ou tempo de duração
+    int id; // tipo do power-up: 1 = moeda extra, etc.
+    char nome[50];
+    int valor; // pontos ganhos
 } PowerUp;
 
 // Nó da fila
@@ -21,7 +21,7 @@ typedef struct
 {
     No *inicio;
     No *fim;
-    int tamanho; // para saber quantos itens tem na fila
+    int tamanho;
 } Fila;
 
 // Funções da fila
