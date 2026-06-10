@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
@@ -21,12 +20,9 @@
 #define TOTAL_FRAMES_INIMIGO 8
 
 #define VELOCIDADE 5
-#define TAM_JOGADOR 96
-#define TAM_INIMIGO 64
+#define TAM_JOGADOR 96      // Tamanho do personagem (aumentado)
+#define TAM_INIMIGO 64      // Tamanho do inimigo (padrão)
 #define TAM_MOEDA 32
-
-// Distância mínima para o inimigo parar de se aproximar
-#define DISTANCIA_MINIMA 80
 
 // ========================= STRUCTS =========================
 
@@ -63,7 +59,7 @@ typedef struct
     int pontos;
 } Score;
 
-// ========================= FUNÇÕES DE SCORE =========================
+// ========================= FUNÇÃO SALVAR SCORE =========================
 
 void salvar_score(char nome[], int pontos)
 {
@@ -77,6 +73,8 @@ void salvar_score(char nome[], int pontos)
     fclose(arquivo);
 }
 
+// ========================= BUBBLE SORT =========================
+
 void bubble_sort(Score v[], int n)
 {
     for (int i = 0; i < n - 1; i++)
@@ -88,6 +86,8 @@ void bubble_sort(Score v[], int n)
                 v[j + 1] = temp;
             }
 }
+
+// ========================= CARREGAR SCORES =========================
 
 int carregar_scores(Score scores[])
 {
@@ -104,7 +104,7 @@ int carregar_scores(Score scores[])
     return i;
 }
 
-// ========================= MOVIMENTAÇÃO E COLISÃO =========================
+// ========================= MOVER JOGADOR =========================
 
 void mover_jogador(Jogador *j, int dx, int dy)
 {
@@ -121,6 +121,8 @@ void mover_jogador(Jogador *j, int dx, int dy)
         j->pos.y = ALTURA - TAM_JOGADOR;
 }
 
+// ========================= COLISÃO COM MOEDA =========================
+
 int colisao_moeda(Jogador *j, Moeda *m)
 {
     if (!m->ativa)
@@ -133,6 +135,8 @@ int colisao_moeda(Jogador *j, Moeda *m)
 
     return (jd > me && je < md && jb > mc && jc < mb);
 }
+
+// ========================= COLISÃO COM INIMIGO =========================
 
 int colisao_inimigo(Jogador *j, Inimigo *inim)
 {
@@ -173,13 +177,16 @@ int main()
     al_register_event_source(fila, al_get_display_event_source(display));
     al_register_event_source(fila, al_get_timer_event_source(timer));
 
-    // Fonte (com fallback)
+    // Fonte
     ALLEGRO_FONT *fonte = al_load_ttf_font("arial.ttf", 24, 0);
     if (!fonte)
-        fonte = al_create_builtin_font();
+    {
+        printf("Erro ao carregar arial.ttf\n");
+        return 1;
+    }
 
     // ======================== CARREGAR IMAGENS ========================
-    // Background
+    // Background (certifique-se de que a imagem está em Imagens/background.png)
     ALLEGRO_BITMAP *background = al_load_bitmap("Imagens/background.png");
     if (!background)
     {
@@ -202,31 +209,38 @@ int main()
             background = background_cortado;
         }
         else
+        {
             printf("Aviso: Dimensões da imagem muito pequenas para cortar.\n");
+        }
     }
 
-    // Player (10 frames) - com dois underscores
+    // Player (10 frames: Knight__01_WALK_001.png a 010.png)
     ALLEGRO_BITMAP *player[TOTAL_FRAMES_PLAYER];
     char nome_arquivo[100];
+
     for (int i = 0; i < TOTAL_FRAMES_PLAYER; i++)
     {
-        sprintf(nome_arquivo, "Imagens/Knight_01__WALK_%03d.png", i);
+        sprintf(nome_arquivo, "Imagens/Knight__01_WALK_%03d.png", i + 1);
         ALLEGRO_BITMAP *orig = al_load_bitmap(nome_arquivo);
+
         if (!orig)
         {
             printf("Erro ao carregar %s\n", nome_arquivo);
             player[i] = NULL;
             continue;
         }
+
+        // Cria um bitmap redimensionado para o tamanho definido (TAM_JOGADOR x TAM_JOGADOR)
         player[i] = al_create_bitmap(TAM_JOGADOR, TAM_JOGADOR);
         al_set_target_bitmap(player[i]);
-        al_draw_scaled_bitmap(orig, 0, 0, al_get_bitmap_width(orig), al_get_bitmap_height(orig),
+        al_draw_scaled_bitmap(orig, 0, 0,
+                              al_get_bitmap_width(orig), al_get_bitmap_height(orig),
                               0, 0, TAM_JOGADOR, TAM_JOGADOR, 0);
         al_set_target_backbuffer(display);
         al_destroy_bitmap(orig);
     }
 
-    // Moeda
+    // Moeda (10 frames: Gold_21.png a 30.png)
     ALLEGRO_BITMAP *coin[TOTAL_FRAMES_MOEDA];
     for (int i = 0; i < TOTAL_FRAMES_MOEDA; i++)
     {
@@ -246,7 +260,7 @@ int main()
         al_destroy_bitmap(orig);
     }
 
-    // Inimigo
+    // Inimigo (8 frames: Golem_01_Walking_001.png a 008.png)
     ALLEGRO_BITMAP *inimigo_frames[TOTAL_FRAMES_INIMIGO];
     for (int i = 0; i < TOTAL_FRAMES_INIMIGO; i++)
     {
@@ -270,7 +284,7 @@ int main()
     Jogador jogador;
     strcpy(jogador.nome, "Player");
     jogador.pontuacao = 0;
-    jogador.pos.x = LARGURA / 2 - TAM_JOGADOR / 2;
+    jogador.pos.x = LARGURA / 2 - TAM_JOGADOR/2;
     jogador.pos.y = ALTURA - 120;
 
     Moeda moedas[MAX_MOEDAS];
@@ -286,7 +300,7 @@ int main()
     {
         inimigos[i].pos.x = rand() % (LARGURA - TAM_INIMIGO);
         inimigos[i].pos.y = rand() % (ALTURA - TAM_INIMIGO);
-        inimigos[i].velocidade = 1 + rand() % 2; // 1 ou 2
+        inimigos[i].velocidade = 2 + rand() % 3; // velocidade de perseguição
         inimigos[i].frame_atual = 0;
         inimigos[i].contador_anim = 0;
     }
@@ -295,11 +309,9 @@ int main()
     int total_scores = carregar_scores(scores);
 
     // Controles
-    int teclas[4] = {0};
+    int teclas[4] = {0}; // A, D, W, S
     int rodando = 1;
-    int frame_player = 0, frame_coin = 0;
-    int contador_animacao = 0;
-    int anim_delay = 12;
+    int frame_player = 0, frame_coin = 0, contador_animacao = 0;
 
     al_start_timer(timer);
 
@@ -313,78 +325,45 @@ int main()
         {
             // Movimento do jogador
             int dx = 0, dy = 0;
-            if (teclas[0])
-                dx -= VELOCIDADE;
-            if (teclas[1])
-                dx += VELOCIDADE;
-            if (teclas[2])
-                dy -= VELOCIDADE;
-            if (teclas[3])
-                dy += VELOCIDADE;
+            if (teclas[0]) dx -= VELOCIDADE; // A
+            if (teclas[1]) dx += VELOCIDADE; // D
+            if (teclas[2]) dy -= VELOCIDADE; // W
+            if (teclas[3]) dy += VELOCIDADE; // S
             mover_jogador(&jogador, dx, dy);
 
-            // Moedas
+            // Colisão com moedas
             for (int i = 0; i < MAX_MOEDAS; i++)
             {
                 if (colisao_moeda(&jogador, &moedas[i]))
                 {
                     moedas[i].ativa = 0;
                     jogador.pontuacao += 10;
+                    // Reposiciona a moeda
                     moedas[i].pos.x = rand() % (LARGURA - TAM_MOEDA);
                     moedas[i].pos.y = rand() % (ALTURA - TAM_MOEDA);
                     moedas[i].ativa = 1;
                 }
             }
 
-            // MOVIMENTO DOS INIMIGOS COM ZONA DE CONFORTO
+            // Movimento e colisão dos inimigos (agora perseguem o jogador)
             for (int i = 0; i < MAX_INIMIGOS; i++)
             {
-                // Calcula distância entre inimigo e jogador
-                int dx_inim = jogador.pos.x - inimigos[i].pos.x;
-                int dy_inim = jogador.pos.y - inimigos[i].pos.y;
-                float distancia = sqrt(dx_inim * dx_inim + dy_inim * dy_inim);
+                // Direção em direção ao jogador
+                int dx_inim = 0, dy_inim = 0;
+                if (inimigos[i].pos.x < jogador.pos.x)
+                    dx_inim = 1;
+                else if (inimigos[i].pos.x > jogador.pos.x)
+                    dx_inim = -1;
 
-                // Se estiver muito perto, não se move ou se afasta levemente
-                if (distancia < DISTANCIA_MINIMA)
-                {
-                    // Opcional: pode se afastar um pouco (empurrar para trás)
-                    // Mas para não ficar "grudento", simplesmente não se move
-                    // e ainda dá um pequeno recuo (opcional)
-                    if (distancia < 40) // muito perto
-                    {
-                        // Recua um pouco (efeito de repulsão)
-                        if (dx_inim != 0)
-                            inimigos[i].pos.x -= (dx_inim / abs(dx_inim)) * inimigos[i].velocidade;
-                        if (dy_inim != 0)
-                            inimigos[i].pos.y -= (dy_inim / abs(dy_inim)) * inimigos[i].velocidade;
-                    }
-                    // Se estiver na zona de conforto, não se move em direção ao jogador
-                }
-                else
-                {
-                    // Move em direção ao jogador normalmente
-                    int dir_x = 0, dir_y = 0;
-                    if (inimigos[i].pos.x < jogador.pos.x)
-                        dir_x = 1;
-                    else if (inimigos[i].pos.x > jogador.pos.x)
-                        dir_x = -1;
-                    if (inimigos[i].pos.y < jogador.pos.y)
-                        dir_y = 1;
-                    else if (inimigos[i].pos.y > jogador.pos.y)
-                        dir_y = -1;
+                if (inimigos[i].pos.y < jogador.pos.y)
+                    dy_inim = 1;
+                else if (inimigos[i].pos.y > jogador.pos.y)
+                    dy_inim = -1;
 
-                    // Pequeno desvio aleatório
-                    if (rand() % 5 == 0)
-                    {
-                        dir_x += (rand() % 3) - 1;
-                        dir_y += (rand() % 3) - 1;
-                    }
+                inimigos[i].pos.x += dx_inim * inimigos[i].velocidade;
+                inimigos[i].pos.y += dy_inim * inimigos[i].velocidade;
 
-                    inimigos[i].pos.x += dir_x * inimigos[i].velocidade;
-                    inimigos[i].pos.y += dir_y * inimigos[i].velocidade;
-                }
-
-                // Limites da tela
+                // Limites da tela para os inimigos
                 if (inimigos[i].pos.x < 0)
                     inimigos[i].pos.x = 0;
                 if (inimigos[i].pos.x > LARGURA - TAM_INIMIGO)
@@ -394,7 +373,7 @@ int main()
                 if (inimigos[i].pos.y > ALTURA - TAM_INIMIGO)
                     inimigos[i].pos.y = ALTURA - TAM_INIMIGO;
 
-                // Animação
+                // Animação do inimigo (troca de frame a cada 10 ticks)
                 inimigos[i].contador_anim++;
                 if (inimigos[i].contador_anim >= 10)
                 {
@@ -408,15 +387,15 @@ int main()
                     jogador.pontuacao -= 5;
                     if (jogador.pontuacao < 0)
                         jogador.pontuacao = 0;
-                    // Reposiciona o inimigo em outro lugar (espalha)
+                    // Reposiciona o inimigo para um lugar aleatório
                     inimigos[i].pos.x = rand() % (LARGURA - TAM_INIMIGO);
                     inimigos[i].pos.y = rand() % (ALTURA - TAM_INIMIGO);
                 }
             }
 
-            // Animação geral
+            // Animação geral (player e moeda)
             contador_animacao++;
-            if (contador_animacao >= anim_delay)
+            if (contador_animacao >= 8)
             {
                 contador_animacao = 0;
                 frame_player = (frame_player + 1) % TOTAL_FRAMES_PLAYER;
@@ -426,28 +405,34 @@ int main()
             // ======================== DESENHO ========================
             al_clear_to_color(al_map_rgb(0, 0, 0));
 
+            // Background
             if (background)
                 al_draw_scaled_bitmap(background, 0, 0,
                                       al_get_bitmap_width(background),
                                       al_get_bitmap_height(background),
                                       0, 0, LARGURA, ALTURA, 0);
 
+            // Moedas
             for (int i = 0; i < MAX_MOEDAS; i++)
                 if (moedas[i].ativa && coin[frame_coin])
                     al_draw_bitmap(coin[frame_coin], moedas[i].pos.x, moedas[i].pos.y, 0);
 
+            // Inimigos
             for (int i = 0; i < MAX_INIMIGOS; i++)
                 if (inimigo_frames[inimigos[i].frame_atual])
                     al_draw_bitmap(inimigo_frames[inimigos[i].frame_atual],
                                    inimigos[i].pos.x, inimigos[i].pos.y, 0);
 
+            // Jogador
             if (player[frame_player])
                 al_draw_bitmap(player[frame_player], jogador.pos.x, jogador.pos.y, 0);
 
+            // HUD (corrigido)
             al_draw_textf(fonte, al_map_rgb(255, 255, 255), 20, 20, 0, "Pontuacao: %d", jogador.pontuacao);
             al_draw_text(fonte, al_map_rgb(255, 255, 0), 20, 60, 0, "WASD para mover");
             al_draw_text(fonte, al_map_rgb(255, 0, 0), 20, 100, 0, "ESC para sair");
 
+            // Leaderboard
             al_draw_filled_rectangle(LARGURA - 320, 20, LARGURA - 20, 320, al_map_rgba(0, 0, 0, 180));
             al_draw_text(fonte, al_map_rgb(255, 215, 0), LARGURA - 250, 30, 0, "LEADERBOARD");
             al_draw_textf(fonte, al_map_rgb(255, 255, 255), LARGURA - 280, 80, 0, "Atual: %d", jogador.pontuacao);
@@ -472,6 +457,7 @@ int main()
             if (ev.keyboard.keycode == ALLEGRO_KEY_S)
                 teclas[3] = 1;
         }
+        // Teclas soltas
         if (ev.type == ALLEGRO_EVENT_KEY_UP)
         {
             if (ev.keyboard.keycode == ALLEGRO_KEY_A)
@@ -483,25 +469,23 @@ int main()
             if (ev.keyboard.keycode == ALLEGRO_KEY_S)
                 teclas[3] = 0;
         }
+        // Fechar janela
         if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
             rodando = 0;
     }
 
+    // Salvar pontuação
     salvar_score(jogador.nome, jogador.pontuacao);
 
+    // Liberar memória
     for (int i = 0; i < TOTAL_FRAMES_PLAYER; i++)
-        if (player[i])
-            al_destroy_bitmap(player[i]);
+        if (player[i]) al_destroy_bitmap(player[i]);
     for (int i = 0; i < TOTAL_FRAMES_MOEDA; i++)
-        if (coin[i])
-            al_destroy_bitmap(coin[i]);
+        if (coin[i]) al_destroy_bitmap(coin[i]);
     for (int i = 0; i < TOTAL_FRAMES_INIMIGO; i++)
-        if (inimigo_frames[i])
-            al_destroy_bitmap(inimigo_frames[i]);
-    if (background)
-        al_destroy_bitmap(background);
-    if (fonte && fonte != al_create_builtin_font())
-        al_destroy_font(fonte);
+        if (inimigo_frames[i]) al_destroy_bitmap(inimigo_frames[i]);
+    if (background) al_destroy_bitmap(background);
+    al_destroy_font(fonte);
     al_destroy_timer(timer);
     al_destroy_event_queue(fila);
     al_destroy_display(display);
