@@ -9,7 +9,7 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
 
-#include "Fila.h" // *** FILA: incluindo o TAD Fila ***
+#include "Fila.h"
 
 #define LARGURA 1280
 #define ALTURA 720
@@ -171,13 +171,10 @@ int main()
     al_register_event_source(fila, al_get_display_event_source(display));
     al_register_event_source(fila, al_get_timer_event_source(timer));
 
-    // Fonte
+    // Fonte (com fallback para evitar erro)
     ALLEGRO_FONT *fonte = al_load_ttf_font("arial.ttf", 24, 0);
     if (!fonte)
-    {
-        printf("Erro ao carregar arial.ttf\n");
-        return 1;
-    }
+        fonte = al_create_builtin_font();
 
     // ======================== CARREGAR IMAGENS ========================
     ALLEGRO_BITMAP *background = al_load_bitmap("Imagens/background.png");
@@ -264,14 +261,15 @@ int main()
         al_destroy_bitmap(orig);
     }
 
-    // *** FILA: carregar imagem do power-up (opcional) ***
+    // Power-up (imagem) - se não existir, usa um retângulo magenta
     ALLEGRO_BITMAP *powerup_img = al_load_bitmap("Imagens/powerup.png");
     if (!powerup_img)
     {
         powerup_img = al_create_bitmap(32, 32);
         al_set_target_bitmap(powerup_img);
-        al_clear_to_color(al_map_rgb(255, 0, 255)); // magenta fallback
+        al_clear_to_color(al_map_rgb(255, 0, 255)); // magenta
         al_set_target_backbuffer(display);
+        printf("Aviso: Imagens/powerup.png não encontrada. Usando retângulo magenta.\n");
     }
 
     // ======================== INICIALIZA ENTIDADES ========================
@@ -305,14 +303,14 @@ int main()
     // ======================== FILA DE POWER-UPS ========================
     Fila fila_powerups;
     inicializarFila(&fila_powerups);
-    carregarFila(&fila_powerups, "powerups.bin"); // carrega fila salva anteriormente
+    carregarFila(&fila_powerups, "powerups.bin");
 
     // Power-up flutuante na tela
     Posicao pos_powerup;
     pos_powerup.x = rand() % (LARGURA - 64);
     pos_powerup.y = rand() % (ALTURA - 64);
     int powerup_ativo = 1;
-    int contador_coletas = 0; // a cada 3 moedas, insere power-up na fila
+    int contador_coletas = 0; // para gerar power-up a cada 3 moedas
 
     // Controles
     int teclas[4] = {0};
@@ -349,7 +347,6 @@ int main()
                     jogador.pontuacao += 10;
                     contador_coletas++;
 
-                    // *** FILA: a cada 3 moedas, insere um power-up na fila ***
                     if (contador_coletas >= 3)
                     {
                         contador_coletas = 0;
@@ -367,7 +364,7 @@ int main()
                 }
             }
 
-            // *** FILA: coletar power-up flutuante na tela ***
+            // Colisão com power-up flutuante na tela
             if (powerup_ativo)
             {
                 int je = jogador.pos.x, jd = jogador.pos.x + TAM_JOGADOR;
@@ -454,28 +451,32 @@ int main()
                                       al_get_bitmap_height(background),
                                       0, 0, LARGURA, ALTURA, 0);
 
+            // Moedas
             for (int i = 0; i < MAX_MOEDAS; i++)
                 if (moedas[i].ativa && coin[frame_coin])
                     al_draw_bitmap(coin[frame_coin], moedas[i].pos.x, moedas[i].pos.y, 0);
 
-            // Desenha power-up flutuante
+            // Power-up flutuante
             if (powerup_ativo && powerup_img)
                 al_draw_bitmap(powerup_img, pos_powerup.x, pos_powerup.y, 0);
 
+            // Inimigos
             for (int i = 0; i < MAX_INIMIGOS; i++)
                 if (inimigo_frames[inimigos[i].frame_atual])
                     al_draw_bitmap(inimigo_frames[inimigos[i].frame_atual],
                                    inimigos[i].pos.x, inimigos[i].pos.y, 0);
 
+            // Jogador
             if (player[frame_player])
                 al_draw_bitmap(player[frame_player], jogador.pos.x, jogador.pos.y, 0);
 
-            // HUD com informação da fila
+            // HUD
             al_draw_textf(fonte, al_map_rgb(255, 255, 255), 20, 20, 0, "Pontuacao: %d", jogador.pontuacao);
             al_draw_textf(fonte, al_map_rgb(0, 255, 0), 20, 60, 0, "Power-ups na fila: %d", tamanhoFila(&fila_powerups));
-            al_draw_text(fonte, al_map_rgb(255, 255, 0), 20, 100, 0, "WASD para mover | E para usar power-up");
-            al_draw_text(fonte, al_map_rgb(255, 0, 0), 20, 140, 0, "ESC para sair");
+            al_draw_text(fonte, al_map_rgb(255, 255, 0), 20, 100, 0, "WASD mover | E usar power-up");
+            al_draw_text(fonte, al_map_rgb(255, 0, 0), 20, 140, 0, "ESC sair");
 
+            // Leaderboard
             al_draw_filled_rectangle(LARGURA - 320, 20, LARGURA - 20, 320, al_map_rgba(0, 0, 0, 180));
             al_draw_text(fonte, al_map_rgb(255, 215, 0), LARGURA - 250, 30, 0, "LEADERBOARD");
             al_draw_textf(fonte, al_map_rgb(255, 255, 255), LARGURA - 280, 80, 0, "Atual: %d", jogador.pontuacao);
@@ -486,7 +487,7 @@ int main()
             al_flip_display();
         }
 
-        // Teclas
+        // Teclas pressionadas
         if (ev.type == ALLEGRO_EVENT_KEY_DOWN)
         {
             if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
@@ -499,7 +500,6 @@ int main()
                 teclas[2] = 1;
             if (ev.keyboard.keycode == ALLEGRO_KEY_S)
                 teclas[3] = 1;
-            // *** FILA: tecla E para usar power-up ***
             if (ev.keyboard.keycode == ALLEGRO_KEY_E && !estaVazia(&fila_powerups))
             {
                 PowerUp p = removerPowerUp(&fila_powerups);
@@ -522,9 +522,9 @@ int main()
             rodando = 0;
     }
 
-    // Salvar pontuação e fila antes de sair
+    // Salvar pontuação e fila
     salvar_score(jogador.nome, jogador.pontuacao);
-    salvarFila(&fila_powerups, "powerups.bin"); // *** FILA: salva estado atual ***
+    salvarFila(&fila_powerups, "powerups.bin");
 
     // Liberar memória
     for (int i = 0; i < TOTAL_FRAMES_PLAYER; i++)
@@ -540,12 +540,12 @@ int main()
         al_destroy_bitmap(background);
     if (powerup_img)
         al_destroy_bitmap(powerup_img);
-    al_destroy_font(fonte);
+    if (fonte && fonte != al_create_builtin_font())
+        al_destroy_font(fonte);
     al_destroy_timer(timer);
     al_destroy_event_queue(fila);
     al_destroy_display(display);
 
-    liberarFila(&fila_powerups); // libera nós restantes
-
+    liberarFila(&fila_powerups);
     return 0;
 }
