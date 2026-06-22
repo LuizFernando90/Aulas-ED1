@@ -15,3 +15,6 @@ Player 75
 Player 0
 Player 0
 Player 0
+Player 30
+Player 1835
+Player 610

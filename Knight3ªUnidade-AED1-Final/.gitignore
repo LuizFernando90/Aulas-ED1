@@ -1,0 +1,24 @@
+# Arquivos compilados/objeto
+*.o
+*.exe
+*.out
+
+# Arquivos temporários do Allegro (se houver)
+*.swp
+*.swo
+
+# Pastas de build
+build/
+bin/
+Debug/
+Release/
+
+# Arquivos de projeto de IDE (se usar)
+*.user
+*.suo
+.vscode/
+.idea/
+
+# Arquivos de backup
+*.bak
+*~
