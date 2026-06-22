@@ -1,24 +1,18 @@
-# Arquivos compilados/objeto
+# Arquivos de compilação
 *.o
 *.exe
-*.out
+*.dll
+*.so
+*.dylib
 
-# Arquivos temporários do Allegro (se houver)
-*.swp
-*.swo
+# Arquivos gerados pelo jogo
+powerups.bin
+Scores.txt
 
-# Pastas de build
-build/
-bin/
-Debug/
-Release/
-
-# Arquivos de projeto de IDE (se usar)
-*.user
-*.suo
+# Arquivos do editor
 .vscode/
-.idea/
+*.code-workspace
 
-# Arquivos de backup
-*.bak
-*~
+# Arquivos compactados
+*.rar
+*.zip
