@@ -39,7 +39,9 @@ Uma das partes que mais me orgulha neste projeto é a **organização**. Separei
 
 ## 🎨 Sobre os gráficos – de onde vieram
 
-Os sprites e o cenário foram baixados do **[CraftPix.net](https://craftpix.net)** – um site maravilhoso com assets 2D gratuitos e pagos. Lá você encontra personagens, fundos, objetos e muito mais. Super recomendo para quem está começando a criar jogos.
+Os sprites foram baixados do **[CraftPix.net](https://craftpix.net)** – um site maravilhoso com assets 2D gratuitos e pagos. Lá você encontra personagens, fundos, objetos e muito mais. Super recomendo para quem está começando a criar jogos.
+
+Cenarios foi feito pelo chatGPT-5.5Plus. Excelente criação pela IA.
 
 ---
 
